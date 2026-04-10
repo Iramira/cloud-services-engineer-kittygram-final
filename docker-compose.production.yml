@@ -1,0 +1,44 @@
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  # Имя и описание первого контейнера; имя выбирает разработчик. 
+  # Это контейнер с базой данных:
+  postgres:
+    # Из какого образа запустить контейнер:
+    image: postgres:13.10
+    # Файл (или список файлов) с переменными окружения:
+    env_file: .env
+    # Какой volume подключить для этого контейнера:
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  # Имя и описание контейнера с бэкендом:
+  backend:
+    # Из какого Dockerfile собирать образ для этого контейнера:
+    image: iramiras/kittygram_backend:latest
+    env_file: .env
+    volumes:
+      - static:/backend_static/static/
+      - media:/app/media
+    # Какие контейнеры нужно запустить до старта этого контейнера:
+    depends_on:
+      - postgres
+  # Имя третьего контейнера. Это контейнер с фронтендом:
+  frontend:
+    image: iramiras/kittygram_frontend:latest
+    env_file: .env
+    volumes:
+      - static:/app/build
+  # Имя контейнера с nginx gateway:
+  gateway:
+    image: iramiras/kittygram_gateway:latest
+    ports:
+      - "80:80"
+    volumes:
+      - static:/static
+      - media:/media
+    depends_on:
+      - backend
+      - frontend
